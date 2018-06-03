@@ -5,8 +5,12 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#include "history_stack.c"
 
 #define BUFFER_LENGTH   80
+#define LSH_TOK_BUFSIZE 64
+#define LSH_TOK_DELIM " \t\r\n\a"
+
 
 char *readLine(){
 	/* used this method earlier because buffer size had to be extended everytime
@@ -18,9 +22,8 @@ char *readLine(){
 	return line;
 }
 
+
 /* Code for parse taken from https://brennan.io/2015/01/16/write-a-shell-in-c/ */
-#define LSH_TOK_BUFSIZE 64
-#define LSH_TOK_DELIM " \t\r\n\a"
 char** parse(char* line){
    int bufsize = LSH_TOK_BUFSIZE, position = 0;
   char **tokens = malloc(bufsize * sizeof(char*));
@@ -87,9 +90,33 @@ int launch(char** argv){
 int execute(char** argv){
 	if(argv[0]==NULL)
 		return 0;
+	//execute command from history
+	int cmd_length=0;
+	for(int i=0;argv[i]!=NULL;i++){
+		cmd_length++;
+	}
+
+	if (strcmp(argv[0],"!")==0){
+		int cmd_number=0;
+
+		if(strcmp(argv[1],"!")){
+			cmd_number=1;
+		}
+
+		else{
+			cmd_number = *argv[1];
+
+		}
+		char **command = history[CURRENT_SIZE-cmd_number];
+		save(command);
+		return launch(command);
+	}
+
+
 	/*here code of commands that are built-in in the shell
 	 to be invoked should be present*/
 	// NO BUILT_IN FUNCTIONS AS OF NOW.
+	save(argv);
 	return launch(argv);
 }
 
